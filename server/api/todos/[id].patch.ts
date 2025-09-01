@@ -1,4 +1,3 @@
-import { eq, and } from 'drizzle-orm'
 import { useValidatedParams, useValidatedBody, z, zh } from 'h3-zod'
 
 export default eventHandler(async (event) => {
@@ -6,17 +5,29 @@ export default eventHandler(async (event) => {
     id: zh.intAsString
   })
   const { completed } = await useValidatedBody(event, {
-    completed: z.number().int().min(0).max(1)
+    completed: z.boolean()
   })
   const { user } = await requireUserSession(event)
 
-  // List todos for the current user
-  const todo = await useDB().update(tables.todos).set({
-    completed
+  // SQlite:
+  // const isCompleted = completed ? 1 : 0
+  const isCompleted = completed
+
+  // Update todo for the current user
+  const db = await useDB()
+  const updatedTodos = await db.update(tables.todos).set({
+    completed: isCompleted
   }).where(and(
     eq(tables.todos.id, id),
     eq(tables.todos.userId, user.id)
-  )).returning().get()
+  )).returning()
 
+  const todo = updatedTodos[0]
+  if (!todo) {
+    throw createError({
+      statusCode: 404,
+      message: 'Todo not found'
+    })
+  }
   return todo
 })

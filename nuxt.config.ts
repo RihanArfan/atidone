@@ -26,7 +26,7 @@ export default defineNuxtConfig({
       DB: {
         connector: 'pglite',
         options: {
-          dataDir: '.data/hub/pglite'
+          dataDir: '.data/pglite'
         }
       }
     }
